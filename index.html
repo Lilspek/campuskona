@@ -111,6 +111,25 @@
         displayItems(filtered);
     };
 
+    window.sortItems = () => {
+    const sortType = document.getElementById('sort-price').value;
+    let sortedItems = [...allItems]; 
+
+    if (sortType === 'low') {
+        sortedItems.sort((a, b) => a.price - b.price);
+    } else if (sortType === 'high') {
+        sortedItems.sort((a, b) => b.price - a.price);
+    } else if (sortType === 'newest') {
+        sortedItems.sort((a, b) => {
+            const dateA = a.timestamp ? a.timestamp.toDate() : new Date();
+            const dateB = b.timestamp ? b.timestamp.toDate() : new Date();
+            return dateB - dateA;
+        });
+    }
+
+    displayItems(sortedItems);
+};
+
     window.markAsSold = async (itemId) => {
         const password = prompt("Enter Admin Password to delete this item:");
         if (password === '@Lilspek') { 

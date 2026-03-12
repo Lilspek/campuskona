@@ -294,3 +294,13 @@ input, textarea {
     font-size: 0.7rem;
     color: #999;
 }
+
+#sort-price {
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-left: 5px;
+}
