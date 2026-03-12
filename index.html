@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusKona | KNUST Marketplace</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+    <h1>CampusKona 🛒</h1>
+    <p>Buy & Sell </p>
+</header>
+
+<div class="search-container">
+    <input type="text" id="search-input" placeholder="Search for items..." onkeyup="searchItems()">
+</div>
+
+<div class="filter-bar">
+    <button onclick="filterItems('All')">All</button>
+    <button onclick="filterItems('General')">General</button>
+    <button onclick="filterItems('Electronics')">Electronics</button>
+    <button onclick="filterItems('Books')">Books</button>
+    <button onclick="filterItems('Hostel')">Hostel supplies</button>
+    <button onclick="filterItems('Fashion & Beauty')">Fashion & Beauty</button>
+    
+</div>
+
+<main id="items-container">
+    <p class="loading">Loading items...</p>
+</main>
+
+    <a href="post.html" class="fab">+</a>
+
+   <script type="module">
+    import { db, collection, getDocs, deleteDoc, doc } from './firebase-config.js';
+
+    let allItems = []; 
+
+    async function loadItems() {
+        const container = document.getElementById('items-container');
+        try {
+            const querySnapshot = await getDocs(collection(db, "items"));
+            allItems = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })); 
+            displayItems(allItems); 
+        } catch (error) {
+            console.error("Error loading items: ", error);
+            container.innerHTML = '<p>Error loading items. Check your connection.</p>';
+        }
+    }
+
+    function displayItems(items) {
+        const container = document.getElementById('items-container');
+        container.innerHTML = ''; 
+        
+        if (items.length === 0) {
+            container.innerHTML = '<p>No items found.</p>';
+            return;
+        }
+
+        items.forEach((item) => {
+            // TIME AGO LOGIC
+            let timeText = "Just now";
+            if (item.timestamp) {
+                const postDate = item.timestamp.toDate();
+                const diffInMinutes = Math.floor((new Date() - postDate) / 60000);
+                if (diffInMinutes >= 1) timeText = `${diffInMinutes}m ago`;
+                if (diffInMinutes >= 60) timeText = `${Math.floor(diffInMinutes / 60)}h ago`;
+                if (diffInMinutes >= 1440) timeText = `${Math.floor(diffInMinutes / 1440)}d ago`;
+            }
+
+            const waLink = `https://wa.me/${item.whatsapp}?text=Hi,%20I%20saw%20your%20${item.title}%20on%20CampusKona.`;
+            const card = `
+                <div class="card">
+                    <div class="card-header">
+                        <span class="category-tag">${item.category || 'General'}</span>
+                        <span class="time-tag">${timeText}</span>
+                    </div>
+                    ${item.image ? `<img src="${item.image}" class="card-img">` : ''}
+                    <h3>${item.title}</h3>
+                    <p class="price">GHS ${item.price}</p>
+                    <p class="desc">${item.description}</p>
+                    <div class="card-actions">
+                        <a href="${waLink}" target="_blank" class="btn">Message Seller</a>
+                        <button onclick="markAsSold('${item.id}')" class="sold-btn">Sold</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += card;
+        });
+    }
+
+    window.filterItems = (category) => {
+        if (category === 'All') {
+            displayItems(allItems);
+        } else {
+            const filtered = allItems.filter(item => item.category === category);
+            displayItems(filtered);
+        }
+    };
+
+    window.searchItems = () => {
+        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+        const filtered = allItems.filter(item => {
+            return item.title.toLowerCase().includes(searchTerm) || 
+                   item.description.toLowerCase().includes(searchTerm);
+        });
+        displayItems(filtered);
+    };
+
+    window.markAsSold = async (itemId) => {
+        const password = prompt("Enter Admin Password to delete this item:");
+        if (password === '@Lilspek') { 
+            if (confirm("Are you sure this item is sold? It will be removed forever.")) {
+                try {
+                    await deleteDoc(doc(db, "items", itemId));
+                    alert("Item removed successfully!");
+                    loadItems(); 
+                } catch (error) {
+                    alert("Error deleting: " + error.message);
+                }
+            }
+        } else {
+            alert("Incorrect password!");
+        }
+    };
+
+    loadItems();
+</script>
