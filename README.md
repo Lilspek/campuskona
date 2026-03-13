@@ -5,7 +5,7 @@ CampusKona is a lightweight, fast, and mobile-friendly web application designed 
 
 
 ## 🚀 Live Demo
-[View the Live App Here](https://github.com/lilspek/campuskona.git)
+[View the Live App Here](https://lilspek.github.io/campuskona)
 
 
 ## ✨ Features
