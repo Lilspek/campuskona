@@ -1,6 +1,10 @@
 // 1. Import the necessary Firebase functions
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+// Add these to your imports at the top
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+const auth = getAuth(app);
 
 // 2. Your web app's Firebase configuration
 const firebaseConfig = {
@@ -17,4 +21,4 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // 4. Export the database tools for index.html and post.html
-export { db, collection, getDocs, addDoc, deleteDoc, doc };
+export { db, auth, collection, addDoc, getDocs, doc, setDoc, deleteDoc };

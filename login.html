@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | CampusKona</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="auth-container" style="max-width: 400px; margin: 50px auto; padding: 20px;">
+        <h2 id="auth-title">Login to CampusKona</h2>
+        
+        <div id="name-field" style="display: none;">
+            <label>Full Name</label>
+            <input type="text" id="user-name" placeholder="Kofi Mensah">
+        </div>
+
+        <label>KNUST Email</label>
+        <input type="email" id="user-email" placeholder="name@st.knust.edu.gh">
+
+        <label>Password</label>
+        <input type="password" id="user-pass" placeholder="••••••••">
+
+        <button id="main-btn" class="btn btn-full">Login</button>
+        
+        <p style="text-align: center; margin-top: 20px;">
+            <span id="toggle-text">New here?</span> 
+            <a href="#" id="toggle-auth">Create Account</a>
+        </p>
+    </div>
+
+    <script type="module">
+        import { auth, db, doc, setDoc } from './firebase-config.js';
+        import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const mainBtn = document.getElementById('main-btn');
+        const toggleAuth = document.getElementById('toggle-auth');
+        const nameField = document.getElementById('name-field');
+        const authTitle = document.getElementById('auth-title');
+        
+        let isLogin = true;
+
+        // Switch between Login and Signup UI
+        toggleAuth.addEventListener('click', (e) => {
+            e.preventDefault();
+            isLogin = !isLogin;
+            authTitle.innerText = isLogin ? "Login to CampusKona" : "Create Account";
+            mainBtn.innerText = isLogin ? "Login" : "Sign Up";
+            nameField.style.display = isLogin ? "none" : "block";
+            toggleAuth.innerText = isLogin ? "Create Account" : "Login instead";
+        });
+
+        mainBtn.addEventListener('click', async () => {
+            const email = document.getElementById('user-email').value;
+            const pass = document.getElementById('user-pass').value;
+            const name = document.getElementById('user-name').value;
+
+            if(!email || !pass) return alert("Fill in all fields");
+
+            try {
+                if (isLogin) {
+                    // LOGIN LOGIC
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } else {
+                    // SIGNUP LOGIC
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                    const user = userCredential.user;
+
+                    // Create User Profile in Firestore
+                    await setDoc(doc(db, "users", user.uid), {
+                        name: name,
+                        email: email,
+                        joinDate: new Date(),
+                        isVerified: email.toLowerCase().endsWith('@st.knust.edu.gh'),
+                        itemsListed: 0,
+                        itemsSold: 0
+                    });
+                }
+                window.location.href = "index.html";
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+    </script>
+</body>
+</html>
