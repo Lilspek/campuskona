@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Post Item | CampusKona</title>
+    <title>CampusKona | KNUST Marketplace</title>
     <link rel="stylesheet" href="style.css">
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#800000">
 </head>
 <body>
     <header>
@@ -18,7 +22,16 @@
 
             <label>Price (GHS)</label>
             <input type="number" id="price" required placeholder="e.g., 150">
+                <div class="input-group">
+    <label>Full Name</label>
+    <input type="text" id="seller-name" placeholder="Enter your name" required>
+</div>
 
+<div class="input-group">
+    <label>KNUST Student Email</label>
+    <input type="email" id="seller-email" placeholder="username@st.knust.edu.gh" required>
+    <small>Use your student email for a "Verified" badge! ✅</small>
+</div>
             <label for="category">Category</label>
 <select id="category" required>
     <option value="General">General</option>
@@ -47,62 +60,63 @@
     const postBtn = document.getElementById('post-btn');
 
     postBtn.addEventListener('click', async () => {
+        // 1. Capture all input values
         const file = document.getElementById('image').files[0];
         const title = document.getElementById('title').value;
         const price = document.getElementById('price').value;
         const description = document.getElementById('description').value;
         const whatsapp = document.getElementById('whatsapp').value;
-        // Add this line inside your click listener
         const category = document.getElementById('category').value;
+        const sellerName = document.getElementById('seller-name').value;
+        const email = document.getElementById('seller-email').value;
 
-        if (!file || !title || !price) {
-            alert("Please fill in the title, price, and select a photo!");
+        // 2. Validation
+        if (!file || !title || !price || !sellerName || !email) {
+            alert("Please fill in all fields and select a photo!");
             return;
         }
+
+        // 3. Logic for Verification
+        const isVerified = email.toLowerCase().endsWith('@st.knust.edu.gh');
 
         postBtn.innerText = "Uploading Image...";
         postBtn.disabled = true;
 
         try {
-            // 1. Prepare the image for ImgBB
+            // 4. Upload to ImgBB
             const formData = new FormData();
             formData.append('image', file);
-            
             const imgbbKey = '1edc53616bf1d8a925f06f0d3af6df89'; 
             
-            // 2. Upload to ImgBB
             const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
                 method: 'POST',
                 body: formData
             });
 
             const imageData = await response.json();
-
-            // CHECK IF UPLOAD FAILED
-            if (!imageData.success) {
-                throw new Error(imageData.error.message || "ImgBB Upload Failed");
-            }
+            if (!imageData.success) throw new Error("Image Upload Failed");
 
             const imageUrl = imageData.data.display_url;
-            console.log("Image Link Created:", imageUrl);
 
-            // 3. Save to Firebase
+            // 5. Save EVERYTHING to Firebase
             postBtn.innerText = "Saving Item...";
-            // Then add it to your addDoc object
             await addDoc(collection(db, "items"), {
                 title: title,
                 price: price,
                 description: description,
                 whatsapp: whatsapp,
-                category: category, // SAVE THE CATEGORY
+                category: category,
                 image: imageUrl,
+                sellerName: sellerName, // NOW SAVING
+                isVerified: isVerified, // NOW SAVING
                 timestamp: new Date()
             });
-            alert("Posted successfully with image!");
+
+            alert("Posted successfully!");
             window.location.href = "index.html";
         } catch (error) {
-            console.error("DETAILED ERROR:", error);
-            alert("Upload Error: " + error.message); // This will now tell you the REAL problem
+            console.error("Error:", error);
+            alert("Upload Error: " + error.message);
             postBtn.innerText = "Post Item";
             postBtn.disabled = false;
         }
