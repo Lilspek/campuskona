@@ -5,25 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CampusKona | KNUST Marketplace</title>
     <link rel="stylesheet" href="style.css">
-    
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="theme-color" content="#800000">
+    <style>
+        /* Compact Seller Info Styles */
+        .seller-info-compact {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .mini-profile-pic {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #eee;
+            border: 1px solid #ddd;
+        }
+        .verified-badge {
+            background-color: #1877F2;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            font-size: 9px;
+            margin-left: 4px;
+            font-weight: bold;
+        }
+        /* Skeleton Animation */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 8px;
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-card { background: white; padding: 10px; border-radius: 12px; margin-bottom: 15px; }
+        .skeleton-img { width: 100%; height: 180px; margin-bottom: 10px; }
+        .skeleton-title { width: 70%; height: 20px; margin-bottom: 10px; }
+    </style>
 </head>
 <body>
-    <header>
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px;">
-        <h1>CampusKona 🛒</h1>
-        <div id="auth-status">
-            </div>
-    </div>
-    <p>Buy & Sell for KNUST Students</p>
-</header>
+    <header style="background: #800000; color: white; padding: 20px 0; position: relative;">
+        <div id="auth-status" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 10;"></div>
+        <div style="text-align: center;">
+            <h1 style="margin: 0; font-size: 2rem;">CampusKona 🛒</h1>
+            <p style="margin: 5px 0 0; opacity: 0.9;">Buy & Sell for KNUST Students</p>
+        </div>
+    </header>
 
     <div class="search-container">
         <input type="text" id="search-input" placeholder="Search for items..." onkeyup="searchItems()">
-        
-        <select id="sort-price" onchange="sortItems()" title="Sort items by price or date" aria-label="Sort items">
+        <select id="sort-price" onchange="sortItems()" title="Sort items">
             <option value="newest">Newest First</option>
             <option value="low">Price: Low to High</option>
             <option value="high">Price: High to Low</option>
@@ -39,60 +80,47 @@
         <button onclick="filterItems('Fashion & Beauty')">Fashion</button>
     </div>
 
-    <main id="items-container">
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
+    <main id="items-container" class="grid-container">
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-title"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-title"></div></div>
     </main>
 
     <a href="post.html" class="fab">+</a>
 
 <script type="module">
-    import { db, collection, getDocs, deleteDoc, doc } from './firebase-config.js';
+    import { db, collection, getDocs, deleteDoc, doc, auth, getDoc } from './firebase-config.js';
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    let allItems = []; 
+    let allItems = [];
+    const authStatus = document.getElementById('auth-status');
 
-    import { auth } from './firebase-config.js';
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-const authStatus = document.getElementById('auth-status');
-
-// Monitor Login/Logout state
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        // User is signed in
-        authStatus.innerHTML = `
-            <button id="logout-btn" style="background: white; color: #800000; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">Logout</button>
-        `;
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            signOut(auth).then(() => {
-                alert("Logged out!");
-                location.reload();
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            authStatus.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <a href="profile.html?id=${user.uid}" style="color: white; text-decoration: none; font-size: 0.9rem; border-bottom: 1px solid white;">My Profile</a>
+                    <button id="logout-btn" style="background: white; color: #800000; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">Logout</button>
+                </div>`;
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                signOut(auth).then(() => location.reload());
             });
-        });
-    } else {
-        // User is signed out
-        authStatus.innerHTML = `
-            <a href="login.html" style="color: white; text-decoration: none; font-weight: bold; border: 1px solid white; padding: 5px 10px; border-radius: 5px;">Login</a>
-        `;
-    }
-});
+        } else {
+            authStatus.innerHTML = `<a href="login.html" style="color: white; text-decoration: none; font-weight: bold; border: 1px solid white; padding: 5px 12px; border-radius: 5px; font-size: 0.8rem;">Login</a>`;
+        }
+    });
 
     async function loadItems() {
         try {
             const querySnapshot = await getDocs(collection(db, "items"));
-            allItems = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })); 
-            displayItems(allItems); 
+            allItems = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            displayItems(allItems);
         } catch (error) {
             console.error("Error loading items: ", error);
             document.getElementById('items-container').innerHTML = '<p>Error loading items.</p>';
         }
     }
 
-    function displayItems(items) {
+    async function displayItems(items) {
         const container = document.getElementById('items-container');
         container.innerHTML = ''; 
         
@@ -101,111 +129,86 @@ onAuthStateChanged(auth, (user) => {
             return;
         }
 
-        items.forEach((item) => {
+        for (const item of items) {
+            const isSold = item.status === 'sold';
+            const soldBadge = isSold ? `<div class="sold-overlay">Sold</div>` : '';
+            const soldClass = isSold ? 'sold' : '';
             const date = item.timestamp ? item.timestamp.toDate() : new Date();
             const timeString = timeAgo(date);
             const waLink = `https://wa.me/${item.whatsapp}?text=Hi, I saw your ${item.title} on CampusKona.`;
-            
-            // logic for the badge
-            const verifiedBadge = item.isVerified 
-                ? `<span class="verified-tag" style="background: #e1f5fe; color: #01579b; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; border: 1px solid #01579b;">✅ Verified Student</span>` 
-                : '';
+            const verifiedBadge = item.isVerified ? `<span class="verified-badge">✓</span>` : '';
 
-            const cardHTML = `
-                <div class="card">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            // Fetch Live Profile Picture
+            let profilePicUrl = `https://ui-avatars.com/api/?name=${item.sellerName || 'U'}&background=800000&color=fff`;
+            try {
+                const userDoc = await getDoc(doc(db, "users", item.userId));
+                if (userDoc.exists() && userDoc.data().profilePic) {
+                    profilePicUrl = userDoc.data().profilePic;
+                }
+            } catch (e) { console.log("Pic fetch failed"); }
+
+            container.innerHTML += `
+                <div class="card ${soldClass}">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
                         <span class="category-tag">${item.category || 'General'}</span>
-                        ${verifiedBadge} 
+                        <span style="font-size: 0.7rem; color: #666;">${timeString}</span>
                     </div>
-                    ${item.image ? `<img src="${item.image}" class="card-img">` : ''}
+                    <div class="card-img-container">
+                        ${soldBadge}
+                        <img src="${item.image}" class="card-img" loading="lazy">
+                    </div>
                     <div class="card-body">
-                        <div style="display: flex; justify-content: space-between;">
-                            <h3>${item.title}</h3>
-                            <span style="font-size: 0.7rem; color: #666;">${timeString}</span>
+                        <div class="seller-info-compact">
+                            <img src="${profilePicUrl}" class="mini-profile-pic">
+                            <a href="profile.html?id=${item.userId}" style="color: #800000; font-weight: bold; text-decoration: none; font-size: 0.85rem;">
+                                ${item.sellerName || 'Anonymous'}${verifiedBadge}
+                            </a>
                         </div>
+                        <h3>${item.title}</h3>
                         <p class="price">GHS ${item.price}</p>
-                        <p style="font-size: 0.8rem; color: #555; margin-bottom: 5px;">👤 Seller: ${item.sellerName || 'Anonymous'}</p>
                         <p class="desc">${item.description}</p>
-                        
                         <div class="card-actions">
-                            <a href="${waLink}" target="_blank" class="btn">Message Seller</a>
+                            <a href="${waLink}" target="_blank" class="btn">${isSold ? 'Item Sold' : 'Message Seller'}</a>
                             <button onclick="markAsSold('${item.id}')" class="sold-btn">Sold</button>
                         </div>
-                        
-                        <div class="admin-actions" style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
-                             <span class="report-btn" onclick="reportItem('${item.id}', '${item.title}')" style="cursor:pointer; color: #800000; font-size: 0.8rem;">🚩 Report Post</span>
-                        </div>
                     </div>
-                </div>
-            `;
-            container.innerHTML += cardHTML;
-        });
+                </div>`;
+        }
     }
 
-    // UTILITY FUNCTIONS
     function timeAgo(date) {
         const seconds = Math.floor((new Date() - date) / 1000);
-        let interval = Math.floor(seconds / 31536000);
-        if (interval > 1) return interval + "y ago";
-        interval = Math.floor(seconds / 2592000);
-        if (interval > 1) return interval + "mo ago";
-        interval = Math.floor(seconds / 86400);
-        if (interval > 1) return interval + "d ago";
-        interval = Math.floor(seconds / 3600);
-        if (interval > 1) return interval + "h ago";
+        if (seconds < 60) return "Just now";
+        let interval = Math.floor(seconds / 3600);
+        if (interval >= 1) return interval + "h ago";
         interval = Math.floor(seconds / 60);
-        if (interval > 1) return interval + "m ago";
-        return "Just now";
+        return interval + "m ago";
     }
 
-    window.reportItem = (id, title) => {
-        const adminPhone = "+233538736081"; 
-        const msg = `Hi Admin, I want to report this item: ${title} (ID: ${id}).`;
-        window.open(`https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`);
-    };
-
+    // Global Window Functions
     window.filterItems = (category) => {
-        if (category === 'All') {
-            displayItems(allItems);
-        } else {
-            const filtered = allItems.filter(item => item.category === category);
-            displayItems(filtered);
-        }
+        category === 'All' ? displayItems(allItems) : displayItems(allItems.filter(i => i.category === category));
     };
 
     window.searchItems = () => {
-        const searchTerm = document.getElementById('search-input').value.toLowerCase();
-        const filtered = allItems.filter(item => {
-            return item.title.toLowerCase().includes(searchTerm) || 
-                   item.description.toLowerCase().includes(searchTerm);
-        });
-        displayItems(filtered);
+        const term = document.getElementById('search-input').value.toLowerCase();
+        displayItems(allItems.filter(i => i.title.toLowerCase().includes(term) || i.description.toLowerCase().includes(term)));
     };
 
     window.sortItems = () => {
-        const sortType = document.getElementById('sort-price').value;
-        let sortedItems = [...allItems]; 
-        if (sortType === 'low') sortedItems.sort((a, b) => a.price - b.price);
-        else if (sortType === 'high') sortedItems.sort((a, b) => b.price - a.price);
-        else {
-            sortedItems.sort((a, b) => {
-                const dateA = a.timestamp ? a.timestamp.toDate() : new Date();
-                const dateB = b.timestamp ? b.timestamp.toDate() : new Date();
-                return dateB - dateA;
-            });
-        }
-        displayItems(sortedItems);
+        const type = document.getElementById('sort-price').value;
+        let sorted = [...allItems];
+        if (type === 'low') sorted.sort((a, b) => a.price - b.price);
+        else if (type === 'high') sorted.sort((a, b) => b.price - a.price);
+        displayItems(sorted);
     };
 
     window.markAsSold = async (itemId) => {
         const password = prompt("Enter Admin Password:");
-        if (password === '@Lilspek') { 
+        if (password === '@Lilspek') {
             if (confirm("Delete this item?")) {
-                try {
-                    await deleteDoc(doc(db, "items", itemId));
-                    alert("Removed!");
-                    loadItems(); 
-                } catch (e) { alert("Error: " + e.message); }
+                await deleteDoc(doc(db, "items", itemId));
+                loadItems();
             }
         } else { alert("Incorrect password!"); }
     };

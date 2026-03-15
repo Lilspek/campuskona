@@ -3,122 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CampusKona | KNUST Marketplace</title>
+    <title>Post an Item | CampusKona</title>
     <link rel="stylesheet" href="style.css">
-    
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="theme-color" content="#800000">
 </head>
 <body>
-    <header>
-        <h1><a href="index.html" style="color:white; text-decoration:none;">⬅ Back</a> Post an Item</h1>
+
+    <header class="back-header">
+        <a href="index.html">← Back</a>
+        <h2>Post an Item</h2>
     </header>
 
-    <main>
+    <main class="form-container">
         <form id="post-form">
-            <label for="title">Item Name</label>
-            <input type="text" id="title" required placeholder="e.g., Engineering Drawing Board">
+            <div class="form-group">
+                <label>Item Name</label>
+                <input type="text" id="title" placeholder="e.g., Engineering Drawing" required>
+            </div>
 
-            <label>Price (GHS)</label>
-            <input type="number" id="price" required placeholder="e.g., 150">
-                <div class="input-group">
-    <label>Full Name</label>
-    <input type="text" id="seller-name" placeholder="Enter your name" required>
-</div>
+            <div class="form-group">
+                <label>Price (GHS)</label>
+                <input type="number" id="price" placeholder="e.g., 150" required>
+            </div>
 
-<div class="input-group">
-    <label>KNUST Student Email</label>
-    <input type="email" id="seller-email" placeholder="username@st.knust.edu.gh" required>
-    <small>Use your student email for a "Verified" badge! ✅</small>
-</div>
-            <label for="category">Category</label>
-<select id="category" required>
-    <option value="General">General</option>
-    <option value="Electronics">Electronics</option>
-    <option value="Books">Books/Stationery</option>
-    <option value="Fashion">Fashion & Beauty</option>
-    <option value="Hostel supplies">Hostel Supplies</option>
-</select>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="sellerName" placeholder="Enter your name" required>
+            </div>
 
-            <label>Description</label>
-            <textarea id="description" required placeholder="Condition, location on campus, etc."></textarea>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="category">
+                    <option value="General">General</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Books">Books</option>
+                    <option value="Hostel">Hostel</option>
+                    <option value="Fashion & Beauty">Fashion & Beauty</option>
+                </select>
+            </div>
 
-            <label>WhatsApp Number</label>
-            <input type="tel" id="whatsapp" required placeholder="e.g., 233550000000 (include 233)">
+            <div class="form-group">
+                <label>WhatsApp Number</label>
+                <input type="text" id="whatsapp" placeholder="e.g., 233550000000" required>
+            </div>
 
-            <label for="image">Item Photo</label>
-            <input type="file" id="image" accept="image/*">
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="description" placeholder="Condition, location on campus, etc."></textarea>
+            </div>
 
-            <button type="button" id="post-btn" class="btn btn-full">Post Item</button>
+            <div class="form-group">
+                <label>Item Photo</label>
+                <div id="image-preview"></div>
+                <input type="file" id="image" accept="image/*" required>
+            </div>
+
+            <button type="submit" class="post-btn" id="submit-btn">Post Item</button>
         </form>
     </main>
 
     <script type="module">
-    import { auth, db, collection, addDoc, doc, getDoc } from './firebase-config.js';
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { db, collection, addDoc, auth } from './firebase-config.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    let currentUserData = null;
+        let currentUser = null;
 
-    // 1. Check if user is logged in and get their profile
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-            alert("Please login first!");
-            window.location.href = "login.html";
-        } else {
-            // Fetch the user's name and verification status from Firestore
-            const userRef = doc(db, "users", user.uid);
-            const userSnap = await getDoc(userRef);
-            if (userSnap.exists()) {
-                currentUserData = userSnap.data();
-                console.log("Welcome,", currentUserData.name);
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+            } else {
+                alert("Please login first!");
+                window.location.href = "login.html";
             }
-        }
-    });
+        });
 
-    const postBtn = document.getElementById('post-btn');
+        const postForm = document.getElementById('post-form');
+        const submitBtn = document.getElementById('submit-btn');
 
-    postBtn.addEventListener('click', async () => {
-        const file = document.getElementById('image').files[0];
-        const title = document.getElementById('title').value;
-        const price = document.getElementById('price').value;
-        const description = document.getElementById('description').value;
-        const whatsapp = document.getElementById('whatsapp').value;
-        const category = document.getElementById('category').value;
-
-        if (!file || !title || !price || !currentUserData) {
-            alert("Please wait for profile to load and fill all fields!");
-            return;
-        }
-
-        postBtn.innerText = "Uploading...";
-        postBtn.disabled = true;
-
-        try {
-            // Image Upload Logic (Keep your ImgBB code here)
-            // ... [Insert your existing fetch(imgbb) code here] ...
+        postForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
             
-            const imageUrl = imageData.data.display_url;
+            if (!currentUser) return alert("You must be logged in!");
 
-            // 2. Save to Firebase using PROFILE data
-            await addDoc(collection(db, "items"), {
-                title: title,
-                price: price,
-                description: description,
-                whatsapp: whatsapp,
-                category: category,
-                image: imageUrl,
-                userId: auth.currentUser.uid, // Linked to the account
-                sellerName: currentUserData.name, // Automatic
-                isVerified: currentUserData.isVerified, // Automatic
-                timestamp: new Date()
-            });
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Uploading...";
 
-            alert("Posted successfully!");
-            window.location.href = "index.html";
-        } catch (error) {
-            alert(error.message);
-            postBtn.disabled = false;
-        }
-    });
-</script>
+            const title = document.getElementById('title').value;
+            const price = document.getElementById('price').value;
+            const sellerName = document.getElementById('sellerName').value;
+            const category = document.getElementById('category').value;
+            const whatsapp = document.getElementById('whatsapp').value;
+            const description = document.getElementById('description').value;
+            const imageFile = document.getElementById('image').files[0];
+
+            // Convert image to Base64 (simplest way for your current setup)
+            const reader = new FileReader();
+            reader.readAsDataURL(imageFile);
+            reader.onload = async () => {
+                const base64Image = reader.result;
+
+                try {
+                    await addDoc(collection(db, "items"), {
+                        title,
+                        price: parseFloat(price),
+                        sellerName,
+                        category,
+                        whatsapp,
+                        description,
+                        image: base64Image,
+                        userId: currentUser.uid,
+                        timestamp: new Date(),
+                        status: 'active'
+                    });
+
+                    alert("Item posted successfully!");
+                    window.location.href = "index.html";
+                } catch (error) {
+                    console.error("Error adding document: ", error);
+                    alert("Error posting item. Try again.");
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "Post Item";
+                }
+            };
+        });
+    </script>
+</body>
+</html>
