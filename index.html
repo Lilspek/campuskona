@@ -155,7 +155,7 @@
                     </div>
                     <div class="card-img-container">
                         ${soldBadge}
-                        <img src="${item.image}" class="card-img" loading="lazy">
+                        <img src="${item.image}" class="card-img" loading="lazy" onclick="openImageModal('${item.image}')">
                     </div>
                     <div class="card-body">
                         <div class="seller-info-compact">
@@ -175,6 +175,18 @@
                 </div>`;
         }
     }
+
+    window.openImageModal = (imgSrc) => {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImg');
+    modal.style.display = 'flex';
+    modalImg.src = imgSrc;
+};
+
+window.closeImageModal = () => {
+    document.getElementById('imageModal').style.display = 'none';
+};
+
 
     function timeAgo(date) {
         const seconds = Math.floor((new Date() - date) / 1000);
@@ -215,5 +227,12 @@
 
     loadItems();
 </script>
+
+<!-- Fullscreen Image Modal -->
+<div id="imageModal" class="img-modal" onclick="closeImageModal()">
+    <span class="img-modal-close">&times;</span>
+    <img id="modalImg">
+</div>
+
 </body>
 </html>
